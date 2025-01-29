@@ -1,0 +1,116 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Monitor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .data-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .status-connected {
+            color: green;
+        }
+        .status-disconnected {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Robot Monitor</h1>
+        <div class="data-section">
+            <h2>Connection Status: <span id="connection-status"></span></h2>
+        </div>
+        <div class="data-section">
+            <h2>Controller Time</h2>
+            <p><span id="controller-time"></span> s</p>
+        </div>
+        <div class="data-section">
+            <h2>Tool Position</h2>
+            <p>X: <span id="pos-x"></span> mm</p>
+            <p>Y: <span id="pos-y"></span> mm</p>
+            <p>Z: <span id="pos-z"></span> mm</p>
+        </div>
+        <div class="data-section">
+            <h2>Tool Orientation</h2>
+            <p>RX: <span id="ori-rx"></span> rad</p>
+            <p>RY: <span id="ori-ry"></span> rad</p>
+            <p>RZ: <span id="ori-rz"></span> rad</p>
+        </div>
+        <div class="data-section">
+            <h2>Joint Positions</h2>
+            <div id="joint-positions"></div>
+        </div>
+        <div class="data-section">
+            <h2>Motor Temperatures</h2>
+            <div id="motor-temperatures"></div>
+        </div>
+        <div class="data-section">
+            <h2>Tool Forces</h2>
+            <p>X: <span id="force-x"></span> N</p>
+            <p>Y: <span id="force-y"></span> N</p>
+            <p>Z: <span id="force-z"></span> N</p>
+        </div>
+    </div>
+
+    <script>
+        function updateData() {
+            $.getJSON('/data', function(data) {
+                $('#connection-status')
+                    .text(data.connection_status)
+                    .removeClass()
+                    .addClass(data.connection_status === 'Connected' ? 'status-connected' : 'status-disconnected');
+
+                $('#controller-time').text(data.controller_timestamp[0].toFixed(1));
+
+                $('#pos-x').text(data.tool_position.x.toFixed(2));
+                $('#pos-y').text(data.tool_position.y.toFixed(2));
+                $('#pos-z').text(data.tool_position.z.toFixed(2));
+
+                $('#ori-rx').text(data.tool_orientation.rx.toFixed(3));
+                $('#ori-ry').text(data.tool_orientation.ry.toFixed(3));
+                $('#ori-rz').text(data.tool_orientation.rz.toFixed(3));
+
+                let jointHtml = '';
+                data.joint_positions.forEach((pos, index) => {
+                    jointHtml += `<p>Joint ${index + 1}: ${pos.toFixed(2)}°</p>`;
+                });
+                $('#joint-positions').html(jointHtml);
+
+                let tempHtml = '';
+                data.motor_temperatures.forEach((temp, index) => {
+                    tempHtml += `<p>Motor ${index + 1}: ${temp.toFixed(1)}°C</p>`;
+                });
+                $('#motor-temperatures').html(tempHtml);
+
+                $('#force-x').text(data.tool_forces.x.toFixed(2));
+                $('#force-y').text(data.tool_forces.y.toFixed(2));
+                $('#force-z').text(data.tool_forces.z.toFixed(2));
+
+            });
+        }
+
+        // 100ms
+        setInterval(updateData, 100);
+    </script>
+</body>
+</html>
